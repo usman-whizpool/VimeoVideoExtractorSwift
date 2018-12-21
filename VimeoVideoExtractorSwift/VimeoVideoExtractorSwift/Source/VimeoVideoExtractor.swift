@@ -3,13 +3,16 @@
 //  VimeoVideoExtractorSwift
 //
 //  Created by Usman Nisar on 6/8/18.
-//  Copyright © 2018 Usman Nisar. All rights reserved.
+//  Copyright © 2018 Whizpool. All rights reserved.
 //
 
 import UIKit
 import AVFoundation
 
+//***********************************************************************//
 //for vimeo video thumbnail extraction
+//***********************************************************************//
+
 enum VimeoThumbnailQuality : Int
 {
     case eVimeoThumbUnknown = 0, eVimeoThumb640, eVimeoThumb960, eVimeoThumb1280, eVimeoThumbBase
@@ -28,7 +31,10 @@ enum VimeoThumbnailQuality : Int
     }
 }
 
+//***********************************************************************//
 //for vimeo video thumbnail extraction
+//***********************************************************************//
+
 enum VimeoVideoQuality : Int
 {
     case eVimeoVideoUnknown = 0, eVimeoVideo360, eVimeoVideo540, eVimeoVideo640, eVimeoVideo720, eVimeoVideo960, eVimeoVideo1080
@@ -48,6 +54,10 @@ enum VimeoVideoQuality : Int
         }
     }
 }
+
+//***********************************************************************//
+//
+//***********************************************************************//
 
 class VimeoVideoExtractor: NSObject
 {
@@ -91,6 +101,10 @@ class VimeoVideoExtractor: NSObject
         }.resume()
     }
     
+    //***********************************************************************//
+    //
+    //***********************************************************************//
+    
     func parseVideoResponse (videoDictionary:[String:Any], thumbQuality:VimeoThumbnailQuality, videoQuality:VimeoVideoQuality)
     {
         if let videoData = videoDictionary["video"] as? NSDictionary
@@ -108,6 +122,7 @@ class VimeoVideoExtractor: NSObject
                 {
                     self.thumbnailURL = imageStr
                 }
+                    
                 //if desired quality does not exists..
                 //search for avialable quality
                 else if let imageStr = thumbData.value(forKey: VimeoThumbnailQuality.eVimeoThumb640.description) as? String

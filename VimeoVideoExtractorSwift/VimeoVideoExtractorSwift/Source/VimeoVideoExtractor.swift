@@ -16,7 +16,7 @@ import AVFoundation
 enum VimeoThumbnailQuality : Int
 {
     case eVimeoThumbUnknown = 0, eVimeoThumb640, eVimeoThumb960, eVimeoThumb1280, eVimeoThumbBase
-    
+
     var description : String
     {
         switch self
@@ -38,7 +38,7 @@ enum VimeoThumbnailQuality : Int
 enum VimeoVideoQuality : Int
 {
     case eVimeoVideoUnknown = 0, eVimeoVideo360, eVimeoVideo540, eVimeoVideo640, eVimeoVideo720, eVimeoVideo960, eVimeoVideo1080
-    
+
     var description : String
     {
         switch self
@@ -64,15 +64,15 @@ class VimeoVideoExtractor: NSObject
     var pVideoTitle = ""
     var thumbnailURL = ""
     var videoURL = ""
-    
+
     static func extractVideoFromVideoID(videoID:String, thumbQuality:VimeoThumbnailQuality, videoQuality:VimeoVideoQuality, completionHandler: ((Bool, VimeoVideoExtractor?) -> Void)?)
     {
         let requestString = "https://player.vimeo.com/video/\(videoID)/config"
-        
+
         // set up the session
         let config = URLSessionConfiguration.default
         let session = URLSession(configuration: config)
-        
+
         session.dataTask(with: URL(string: requestString)!) { (data, response, error) in
             //
             if error == nil
@@ -81,12 +81,12 @@ class VimeoVideoExtractor: NSObject
                 {
                     do {
                         let jsonObject = try JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions.init(rawValue: 0)) as! [String : Any]
-                        
+
                         let videoObj = VimeoVideoExtractor()
-                        videoObj.parseVideoResponse(videoDictionary: jsonObject, thumbQuality: .eVimeoThumb640, videoQuality: .eVimeoVideo540)
-                        
+                        videoObj.parseVideoResponse(videoDictionary: jsonObject, thumbQuality: thumbQuality, videoQuality: videoQuality)
+
                         completionHandler!(true, videoObj)
-                        
+
                     } catch {
                         completionHandler!(false, nil)
                         print(error.localizedDescription)
@@ -97,14 +97,14 @@ class VimeoVideoExtractor: NSObject
                     completionHandler!(false, nil)
                 }
             }
-            
-        }.resume()
+
+            }.resume()
     }
-    
+
     //***********************************************************************//
     //
     //***********************************************************************//
-    
+
     func parseVideoResponse (videoDictionary:[String:Any], thumbQuality:VimeoThumbnailQuality, videoQuality:VimeoVideoQuality)
     {
         if let videoData = videoDictionary["video"] as? NSDictionary
@@ -114,7 +114,7 @@ class VimeoVideoExtractor: NSObject
             {
                 self.pVideoTitle = title
             }
-            
+
             //extract thumbnail from video data
             if let thumbData = videoData.value(forKey: "thumbs") as? NSDictionary
             {
@@ -122,9 +122,9 @@ class VimeoVideoExtractor: NSObject
                 {
                     self.thumbnailURL = imageStr
                 }
-                    
-                //if desired quality does not exists..
-                //search for avialable quality
+
+                    //if desired quality does not exists..
+                    //search for avialable quality
                 else if let imageStr = thumbData.value(forKey: VimeoThumbnailQuality.eVimeoThumb640.description) as? String
                 {
                     self.thumbnailURL = imageStr
@@ -138,7 +138,7 @@ class VimeoVideoExtractor: NSObject
                     self.thumbnailURL = imageStr
                 }
             }
-            
+
             //now extract video playable url from data
             //its data object hierechi is: request -> files -> progressive
             if let requestData = videoDictionary["request"] as? NSDictionary
@@ -147,17 +147,23 @@ class VimeoVideoExtractor: NSObject
                 {
                     if let progressiveDataArray = filesData.value(forKey: "progressive") as? NSArray
                     {
-                        for object in progressiveDataArray
-                        {
-                            if let progressiveData = object as? NSDictionary
+                        let compatibleQualities = Array(0...videoQuality.rawValue)
+                            .reversed()
+                            .compactMap { VimeoVideoQuality(rawValue: $0) }
+
+                        for compatibleQualitie in compatibleQualities {
+                            if !self.videoURL.isEmpty {
+                                break
+                            }
+
+                            for object in progressiveDataArray
                             {
-                                if let quality = progressiveData.value(forKey: "quality") as? String
+                                if let progressiveData = object as? NSDictionary,
+                                    let quality = progressiveData.value(forKey: "quality") as? String,
+                                    quality == compatibleQualitie.description
                                 {
-                                    if quality == videoQuality.description
-                                    {
-                                        self.videoURL =  progressiveData.value(forKey: "url") as! String
-                                        break
-                                    }
+                                    self.videoURL =  progressiveData.value(forKey: "url") as! String
+                                    break
                                 }
                             }
                         }

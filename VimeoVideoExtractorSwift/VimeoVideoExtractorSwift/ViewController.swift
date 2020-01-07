@@ -90,12 +90,11 @@ class ViewController: UIViewController, UITextFieldDelegate
                         if let url = URL(string: videoObj!.thumbnailURL)
                         {
                             //load thumbnail via cashe library : sdwebimage
-                            self.thumbnailImageView.sd_setImage(with: url, placeholderImage: #imageLiteral(resourceName: "placeholder"), options:.cacheMemoryOnly, completed: { (image, error, cashe, url) in
-                                //
+                            self.thumbnailImageView!.sd_setImage(with: url, placeholderImage: #imageLiteral(resourceName: "placeholder"), options: .fromLoaderOnly) { (image, error, cashe, url) in
                                 //stop spinner and enable use interaction
                                 self.spinerView.stopAnimating()
                                 self.view.isUserInteractionEnabled = true
-                            })
+                            }
                         }
                         else
                         {
